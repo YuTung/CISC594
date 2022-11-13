@@ -1,5 +1,4 @@
-# Setup Instructions
-## Running the application:
+# Running the application:
 1.	Go to the project directory
 2.	Run server_gui.py and (multiple) client_gui.py.
 3.	In the server_gui window, hit the “Connect” button to allow clients to connect to the server.
