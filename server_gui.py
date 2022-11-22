@@ -154,8 +154,4 @@ def update_client_names_display(name_list):
         tkDisplay.insert(tk.END, c+"\n")
     tkDisplay.config(state=tk.DISABLED)
 
-
-#def send_client_name_status(name_status_list):
-    
-
 window.mainloop()

@@ -170,8 +170,5 @@ def send_type_indicator_release_to_server():
     client.send(msg.encode())
     #print("Sending indicator release")
 
-    
-#def update_client_name_status():
-    
 
 window.mainloop()
