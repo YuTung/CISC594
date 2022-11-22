@@ -42,7 +42,6 @@ typingIndicatorText.set("")
 typingIndicatorLabel = tk.Label(bottomFrame, textvariable=typingIndicatorText).pack(side=tk.RIGHT)
 bottomFrame.pack(side=tk.BOTTOM)
 
-
 last_press_time = 0
 def key_pressed(event):
 	global last_press_time, typingIndicatorText
@@ -61,8 +60,6 @@ def key_released(event):
 	send_type_indicator_release_to_server()
 	#last_released_time = time.time()
 tkMessage.bind("<KeyRelease>",key_released)
-
-
 
 def connect():
     global username, client
@@ -169,6 +166,5 @@ def send_type_indicator_release_to_server():
     msg = "type_indicator_release_encode"
     client.send(msg.encode())
     #print("Sending indicator release")
-
 
 window.mainloop()
