@@ -4,6 +4,9 @@ import socket
 import threading
 import time
 
+import globalVariables
+from TypeIndicatorClass import TypeIndicator
+
 window = tk.Tk()
 window.title("Client")
 username = " "
@@ -42,24 +45,9 @@ typingIndicatorText.set("")
 typingIndicatorLabel = tk.Label(bottomFrame, textvariable=typingIndicatorText).pack(side=tk.RIGHT)
 bottomFrame.pack(side=tk.BOTTOM)
 
-last_press_time = 0
-def key_pressed(event):
-	global last_press_time, typingIndicatorText
-	delta_t = time.time() - last_press_time # to debounce
-	if delta_t > 0.1:
-		send_type_indicator_to_server()
-	last_press_time = time.time()
-tkMessage.bind("<KeyPress>",key_pressed)
-
-
-#last_released_time = 0
-def key_released(event):
-	global last_released_time, typingIndicatorText
-	#delta_t = time.time() - last_released_time # to debounce
-	#if delta_t > 0.5:
-	send_type_indicator_release_to_server()
-	#last_released_time = time.time()
-tkMessage.bind("<KeyRelease>",key_released)
+type_indicator = TypeIndicator()
+tkMessage.bind("<KeyPress>",type_indicator.key_pressed)
+tkMessage.bind("<KeyRelease>",type_indicator.key_released)
 
 def connect():
     global username, client
@@ -69,18 +57,12 @@ def connect():
         username = entName.get()
         connect_to_server(username)
 
-
-# network client
-client = None
-HOST_ADDR = "127.0.0.1"
-HOST_PORT = 5002
-
 def connect_to_server(name):
     global client, HOST_PORT, HOST_ADDR
     try:
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect((HOST_ADDR, HOST_PORT))
-        client.send(name.encode()) # Send name to server after connecting
+        globalVariables.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        globalVariables.client.connect((globalVariables.HOST_ADDR, globalVariables.HOST_PORT))
+        globalVariables.client.send(name.encode()) # Send name to server after connecting
 
         entName.config(state=tk.DISABLED)
         btnConnect.config(state=tk.DISABLED)
@@ -88,10 +70,9 @@ def connect_to_server(name):
 
         # start a thread to keep receiving message from server
         # do not block the main thread :)
-        threading._start_new_thread(receive_message_from_server, (client, "m"))
+        threading._start_new_thread(receive_message_from_server, (globalVariables.client, "m"))
     except Exception as e:
-        tk.messagebox.showerror(title="ERROR!!!", message="Cannot connect to host: " + HOST_ADDR + " on port: " + str(HOST_PORT) + " Server may be Unavailable. Try again later")
-
+        tk.messagebox.showerror(title="ERROR!!!", message="Cannot connect to host: " + globalVariables.HOST_ADDR + " on port: " + str(globalVariables.HOST_PORT) + " Server may be Unavailable. Try again later")
 
 def receive_message_from_server(sck, m):
     while True:
@@ -123,7 +104,7 @@ def receive_message_from_server(sck, m):
             tkDisplay.see(tk.END)
 
         # print("Server says: " +from_server)
-
+    globalVariables.client.close()    
     sck.close()
     window.destroy()
 
@@ -151,11 +132,8 @@ def getChatMessage(msg):
 
 def send_mssage_to_server(msg):
     client_msg = str(msg)
-    client.send(client_msg.encode())
-    if msg == "exit":
-        client.close()
-        window.destroy()
-    print("Sending message")
+    globalVariables.client.send(client_msg.encode())
+    
 
 def send_type_indicator_to_server():
     msg = "type_indicator_encode"
