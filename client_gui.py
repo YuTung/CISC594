@@ -166,4 +166,5 @@ def send_message_to_server(msg):
 def update_client_name_status(msg):
     nameStatusText.set(msg)
       
-window.mainloop()
+if globalVariables.f_enable_gui:
+    window.mainloop()
