@@ -7,6 +7,7 @@ import time
 import globalVariables
 from TypeIndicatorClass import TypeIndicator
 from UserStatusClass import UserStatus
+from helper import format_print, format_msg_info
 
 window = tk.Tk()
 window.title("Client")
@@ -143,9 +144,9 @@ def getChatMessage(msg):
     # why? Apparently, tkinter does not allow use insert into a disabled Text widget :(
     tkDisplay.config(state=tk.NORMAL)
     if len(texts) < 1:
-        tkDisplay.insert(tk.END, "You->" + msg, "tag_your_message") # no line
+        tkDisplay.insert(tk.END, format_msg_info() + "You->" + msg, "tag_your_message") # no line
     else:
-        tkDisplay.insert(tk.END, "\n\n" + "You->" + msg, "tag_your_message")
+        tkDisplay.insert(tk.END, format_msg_info() + "You->" + msg, "tag_your_message")
 
     tkDisplay.config(state=tk.DISABLED)
 
