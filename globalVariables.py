@@ -6,5 +6,5 @@ HOST_PORT = 5002
 
 username = " "
 
-f_enable_gui = True # Turn on GUI
-#f_enable_gui = False # for UT
+#f_enable_gui = True # Turn on GUI
+f_enable_gui = False # for UT
