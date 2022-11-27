@@ -2,6 +2,7 @@ import tkinter as tk
 import socket
 import threading
 
+import globalVariables
 
 window = tk.Tk()
 window.title("Sever")
@@ -46,18 +47,18 @@ clients_status = []
 
 # Start server function
 def start_server():
-    global server, HOST_ADDR, HOST_PORT # code is fine without this
+    #global server, HOST_ADDR, HOST_PORT # code is fine without this
     btnStart.config(state=tk.DISABLED)
     btnStop.config(state=tk.NORMAL)
 
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print(socket.AF_INET)
-    print(socket.SOCK_STREAM)
+    globalVariables.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #print(socket.AF_INET)
+    #print(socket.SOCK_STREAM)
 
-    server.bind((HOST_ADDR, HOST_PORT))
-    server.listen(5)  # server is listening for client connection
+    globalVariables.server.bind((globalVariables.HOST_ADDR, globalVariables.HOST_PORT))
+    globalVariables.server.listen(5)  # server is listening for client connection
 
-    threading._start_new_thread(accept_clients, (server, " "))
+    threading._start_new_thread(accept_clients, (globalVariables.server, " "))
 
     lblHost["text"] = "Host: " + HOST_ADDR
     lblPort["text"] = "Port: " + str(HOST_PORT)
@@ -69,6 +70,7 @@ def stop_server():
     btnStart.config(state=tk.NORMAL)
     btnStop.config(state=tk.DISABLED)
 
+    globalVariables.server.close()
 
 def accept_clients(the_server, y):
     while True:
@@ -108,7 +110,18 @@ def send_receive_client_message(client_connection, client_ip_addr):
 
         for c in clients:
             if c != client_connection:
-                server_msg = str(sending_client_name + "->" + client_msg)
+            
+                #print("Recevied",client_msg)
+                
+			    # check type indicator
+                if client_msg=="type_indicator_encode":
+                    #print("Receive indicator")
+                    server_msg = str(sending_client_name + " is typing...")
+                elif client_msg=="type_indicator_release_encode":
+                    #print("Receive indicator release")
+                    server_msg = str("type_indicator_release_decode")
+                else:
+                    server_msg = str(sending_client_name + "->" + client_msg)
                 c.send(server_msg.encode())
 
     # find the client index then remove from both lists(client name list and connection list)
