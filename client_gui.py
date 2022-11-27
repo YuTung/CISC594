@@ -6,23 +6,30 @@ import time
 
 import globalVariables
 from TypeIndicatorClass import TypeIndicator
+from UserStatusClass import UserStatus
 
 window = tk.Tk()
 window.title("Client")
-username = " "
-
 
 topFrame = tk.Frame(window)
-lblName = tk.Label(topFrame, text = "Name:").pack(side=tk.LEFT)
+lblName = tk.Label(topFrame, text = "Name:").pack(side=tk.LEFT, padx=10)
 entName = tk.Entry(topFrame)
-entName.pack(side=tk.LEFT)
+entName.pack(side=tk.LEFT, padx=10)
 btnConnect = tk.Button(topFrame, text="Connect", command=lambda : connect())
-btnConnect.pack(side=tk.LEFT)
-#btnConnect.bind('<Button-1>', connect)
+btnConnect.pack(side=tk.LEFT, padx=10)
+btnStatus = tk.Button(topFrame, text="Offline", command=lambda : status_button_switch())
+btnStatus.pack(side=tk.LEFT)
+btnStatus.config(state=tk.DISABLED)
 topFrame.pack(side=tk.TOP)
 
 displayFrame = tk.Frame(window)
-lblLine = tk.Label(displayFrame, text="*********************************************************************").pack()
+lblLine = tk.Label(displayFrame, text="*********************************************************************").pack(side=tk.TOP)
+
+nameStatusText = tk.StringVar()
+nameStatusText.set("")
+nameStatusLabel = tk.Label(displayFrame, textvariable=nameStatusText).pack(side=tk.TOP)
+
+lblLine2 = tk.Label(displayFrame, text="*********************************************************************").pack(side=tk.TOP)
 scrollBar = tk.Scrollbar(displayFrame)
 scrollBar.pack(side=tk.RIGHT, fill=tk.Y)
 tkDisplay = tk.Text(displayFrame, height=20, width=55)
@@ -32,33 +39,38 @@ scrollBar.config(command=tkDisplay.yview)
 tkDisplay.config(yscrollcommand=scrollBar.set, background="#F4F6F7", highlightbackground="grey", state="disabled")
 displayFrame.pack(side=tk.TOP)
 
-
 bottomFrame = tk.Frame(window)
-tkMessage = tk.Text(bottomFrame, height=2, width=35)
-tkMessage.pack(side=tk.LEFT, padx=(5, 13), pady=(5, 10))
+tkMessage = tk.Text(bottomFrame, height=1, width=35)
+tkMessage.pack(side=tk.LEFT, padx=(5, 13), pady=(5, 10), fill=tk.X)
 tkMessage.config(highlightbackground="grey", state="disabled")
 tkMessage.bind("<Return>", (lambda event: getChatMessage(tkMessage.get("1.0", tk.END))))
 
 
 typingIndicatorText = tk.StringVar()
 typingIndicatorText.set("")
-typingIndicatorLabel = tk.Label(bottomFrame, textvariable=typingIndicatorText).pack(side=tk.RIGHT)
+typingIndicatorLabel = tk.Label(bottomFrame, textvariable=typingIndicatorText, width=20).pack(side=tk.LEFT, fill=tk.X)
 bottomFrame.pack(side=tk.BOTTOM)
 
 type_indicator = TypeIndicator()
 tkMessage.bind("<KeyPress>",type_indicator.key_pressed)
 tkMessage.bind("<KeyRelease>",type_indicator.key_released)
 
+user_status = UserStatus()
+
 def connect():
-    global username, client
     if len(entName.get()) < 1:
         tk.messagebox.showerror(title="ERROR!!!", message="You MUST enter your first name <e.g. John>")
     else:
-        username = entName.get()
-        connect_to_server(username)
+        globalVariables.username = entName.get()
+        connect_to_server(globalVariables.username)
+    btnStatus.config(state=tk.NORMAL)
+    btnStatus['text'] = "Online"
 
+def status_button_switch():
+    btnStatus['text'] = user_status.change_status_button_display(btnStatus['text'])
+    user_status.update_status_on_server(btnStatus['text'])
+    
 def connect_to_server(name):
-    global client, HOST_PORT, HOST_ADDR
     try:
         globalVariables.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         globalVariables.client.connect((globalVariables.HOST_ADDR, globalVariables.HOST_PORT))
@@ -74,9 +86,14 @@ def connect_to_server(name):
     except Exception as e:
         tk.messagebox.showerror(title="ERROR!!!", message="Cannot connect to host: " + globalVariables.HOST_ADDR + " on port: " + str(globalVariables.HOST_PORT) + " Server may be Unavailable. Try again later")
 
+
 def receive_message_from_server(sck, m):
     while True:
-        from_server = sck.recv(4096).decode()
+        try:
+            from_server = sck.recv(4096).decode()
+        except:
+            print("server is disconnected")
+            break
 
         if not from_server: break
         
@@ -86,7 +103,14 @@ def receive_message_from_server(sck, m):
             typingIndicatorText.set(from_server)
         elif "type_indicator_release_decode" in from_server:
             #print("not typing")
-            typingIndicatorText.set("")            
+            typingIndicatorText.set("")   
+        elif "name_status_encode" in from_server:        
+            msg = from_server.split("\n",1)[1]
+            update_client_name_status(msg)     
+        elif "status_encode" in from_server: 
+            pass       
+        elif "BYE!" in from_server:
+            break
         else:
 
             # display message from server on the chat window
@@ -104,7 +128,8 @@ def receive_message_from_server(sck, m):
             tkDisplay.see(tk.END)
 
         # print("Server says: " +from_server)
-    globalVariables.client.close()    
+
+    globalVariables.client.close()
     sck.close()
     window.destroy()
 
@@ -124,25 +149,20 @@ def getChatMessage(msg):
 
     tkDisplay.config(state=tk.DISABLED)
 
-    send_mssage_to_server(msg)
-
     tkDisplay.see(tk.END)
     tkMessage.delete('1.0', tk.END)
 
+    send_message_to_server(msg)
 
-def send_mssage_to_server(msg):
+
+    
+def send_message_to_server(msg):
     client_msg = str(msg)
     globalVariables.client.send(client_msg.encode())
+    #print("Sending message")
     
-
-def send_type_indicator_to_server():
-    msg = "type_indicator_encode"
-    client.send(msg.encode())
-    #print("Sending indicator")
-
-def send_type_indicator_release_to_server():
-    msg = "type_indicator_release_encode"
-    client.send(msg.encode())
-    #print("Sending indicator release")
-
+    
+def update_client_name_status(msg):
+    nameStatusText.set(msg)
+      
 window.mainloop()
