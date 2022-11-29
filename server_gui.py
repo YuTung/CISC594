@@ -224,4 +224,5 @@ def update_name_status_on_client_side(name_list, status_list, clients):
             #print(c, "is disconnected")
             pass
     
-window.mainloop()
+if globalVariables.f_enable_gui:
+    window.mainloop()
